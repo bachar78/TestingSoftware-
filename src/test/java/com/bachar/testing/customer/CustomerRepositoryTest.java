@@ -1,9 +1,11 @@
 package com.bachar.testing.customer;
 
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 import java.util.Optional;
@@ -28,7 +30,15 @@ class CustomerRepositoryTest {
             assertThat(customer.getName()).isEqualTo(customerSaved.getName());
             assertThat(customer.getId()).isEqualTo(customerSaved.getId());
         });
+    }
 
+    @Test
+    void itShouldNotFindNotExistingCustomer() {
+        //Given
+        String phoneNumber = "123456";
+        //When
+        assertThat(underTest.findCustomerByPhoneNumber(phoneNumber)).isNotPresent();
+        //Then
     }
 
     @Test
@@ -46,6 +56,23 @@ class CustomerRepositoryTest {
             assertThat(c.getId()).isEqualTo(customerSaved.getId());
 //  Deprecated   assertThat(c).isEqualToComparingFieldByField(customerSaved);
         });
+    }
 
+    @Test
+    void itShouldNotSaveCustomerWithNullName() {
+        //Given
+        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder().name(null).phoneNumber("123456").build();
+        //When
+        assertThatThrownBy(() -> underTest.save(new Customer(request.name(), request.phoneNumber()))).isInstanceOf(ConstraintViolationException.class)
+                .hasMessageContaining("must not be blank");
+        }
+
+    @Test
+    void itShouldNotSaveCustomerWithNullPhoneNumber() {
+        //Given
+        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder().name("Bachar").phoneNumber(null).build();
+        //When
+        assertThatThrownBy(() -> underTest.save(new Customer(request.name(), request.phoneNumber()))).isInstanceOf(ConstraintViolationException.class)
+                .hasMessageContaining("must not be blank");
     }
 }

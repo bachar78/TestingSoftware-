@@ -1,5 +1,6 @@
 package com.bachar.testing.customer;
 
+import com.bachar.testing.payment.Payment;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -8,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -31,6 +34,10 @@ public class Customer {
     @NotBlank
     @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Payment> payments;
+
 
     public Customer(String name, String phoneNumber) {
         this.name = name;
