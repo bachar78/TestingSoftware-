@@ -9,7 +9,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
-import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -51,7 +53,7 @@ class CustomerRegistrationServiceTest {
     }
 
     @Test
-    void itShouldNotSaveCustomerWhenCustomerExists() {
+    void itShouldNotSaveCustomerWhenSameCustomerExists() {
         //Given
         CustomerRegistrationRequest request = CustomerRegistrationRequest.builder().name("Bachar").phoneNumber("123456").build();
         Customer customer = Customer.builder().name("Bachar").phoneNumber("123456").build();
@@ -59,8 +61,21 @@ class CustomerRegistrationServiceTest {
         //When
         underTest.registerNewCustomer(request);
         //Then
-//        verify(customerRepository).findCustomerByPhoneNumber(request.phoneNumber());
+        verify(customerRepository).findCustomerByPhoneNumber(request.phoneNumber());
         verify(customerRepository, never()).save(any(Customer.class));
-//        verifyNoMoreInteractions(customerRepository);
+        Throwable thrown = catchThrowable(() -> underTest.registerNewCustomer(request));
+        assertThat(thrown).isNull();
+    }
+
+    @Test
+    void itShouldNotSaveCustomerAndThrowExceptionWhenDifferentCustomerRegister() {
+        //Given
+        CustomerRegistrationRequest request = CustomerRegistrationRequest.builder().name("Bachar").phoneNumber("123456").build();
+        //when
+        when(customerRepository.findCustomerByPhoneNumber(request.phoneNumber())).thenReturn(Optional.of(new Customer("Samer", "123456")));
+        //Then
+        assertThatThrownBy(() -> underTest.registerNewCustomer(request)).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(String.format("Phone number %s already taken", request.phoneNumber()));
+        verify(customerRepository, never()).save(any(Customer.class));
     }
 }
